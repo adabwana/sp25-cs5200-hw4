@@ -1,7 +1,0 @@
-format:
-  html: {toc: true, toc-depth: 3, theme: united, number-sections: false}
-  revealjs: {theme: solarized, navigation-mode: vertical, transition: slide, background-transition: fade, incremental: true}
-project: {type: book}
-book:
-  chapters: [index.qmd, task1.qmd, task2.qmd, bfs.qmd, ucs.qmd, dfs.qmd, dls.qmd, ucs_plus.qmd]
-  title: 'CS5200: Uninformed Search'
