@@ -1,0 +1,243 @@
+
+---
+format:
+  html: {toc: true, toc-depth: 3, theme: united, number-sections: false, output-file: ucs_plus.html}
+code-block-background: true
+highlight-style: atom-one
+
+---
+<style></style><style>.printedClojure .sourceCode {
+  background-color: transparent;
+  border-style: none;
+}
+</style><style>.clay-limit-image-width .clay-image {max-width: 100%}
+.clay-side-by-side .sourceCode {margin: 0}
+.clay-side-by-side {margin: 1em 0}
+</style>
+<script src="ucs_plus_files/md-default0.js" type="text/javascript"></script><script src="ucs_plus_files/md-default1.js" type="text/javascript"></script>
+
+::: {.sourceClojure}
+```clojure
+(ns ucs-plus
+  (:require
+   [bfs :refer [bfs visualize-bfs]]
+   [task2 :refer [dag-data dag-structure node-levels]]
+   [ucs :refer [ucs visualize-ucs]]
+   [uniformed.dag :as dag]))
+```
+:::
+
+
+
+## UCS With Costs
+To demonstrate how **UCS** differs from **BFS** when costs are considered, we'll create a version with custom costs.
+
+
+::: {.sourceClojure}
+```clojure
+(def dag-data-with-costs
+  (dag/build-dag-data
+   dag-structure
+   node-levels
+   {:root-node "Operating-System"
+    :node-costs {"Email" 5  ; Make Email path more expensive
+                 "Browser" 2
+                 "Social-Media" 3
+                 "File" 2
+                 "Docs" 1  ; Make Docs path cheaper
+                 "Games" 4
+                 "Word" 3
+                 "Excel" 4
+                 "PowerPoint" 5
+                 "Excel-Child1" 1}}))
+```
+:::
+
+
+
+### Cost-Aware Path Comparison
+
+
+::: {.sourceClojure}
+```clojure
+(bfs dag-data "Excel-Child1")
+```
+:::
+
+
+
+::: {.printedClojure}
+```clojure
+["Operating-System" "Email" "Excel" "Excel-Child1"]
+
+```
+:::
+
+
+
+::: {.sourceClojure}
+```clojure
+(ucs dag-data-with-costs "Excel-Child1")
+```
+:::
+
+
+
+::: {.printedClojure}
+```clojure
+["Operating-System" "Browser" "Docs" "Word" "Excel-Child1"]
+
+```
+:::
+
+
+
+::: {.sourceClojure}
+```clojure
+^:kind/hiccup
+(visualize-ucs dag-data-with-costs "Excel-Child1")
+```
+:::
+
+
+
+```{=html}
+<!DOCTYPE html>
+<html><html><head><meta charset="UTF-8"><script src="https://d3js.org/d3.v7.min.js"></script><style>body { 
+     margin: 0;
+     padding: 0;
+     overflow: auto;
+     background: white;
+   }
+   .tree-container {
+    width: fit-content;
+    min-width: 800px;
+    margin: 0 auto;
+    height: 100%;
+    min-height: 500px;
+    background: white;
+    overflow: auto;
+  }
+  .node circle {
+    fill: #ADD8E6;
+    stroke: #666;
+    stroke-width: 1.5px;
+  }
+  .node.highlighted circle {
+    fill: #FFA500 !important;
+    stroke: #666;
+    stroke-width: 2px;
+  }
+  .node text {
+    font-size: 12px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+  .link {
+    fill: none;
+    stroke: #999;
+    stroke-width: 1.5px;
+  }
+  .link.highlighted {
+    stroke: #FFA500 !important;
+    stroke-width: 2.5px;
+  }
+  </style></head><body><div class="tree-container"></div><script type="text/javascript">
+  const data = {"nodes":[{"id":"Operating-System","name":"Operating-System","level":0,"cost":1,"parent":null,"x":0,"y":0,"highlighted":"Operating-System"},{"id":"Browser","name":"Browser","level":1,"cost":2,"parent":"Operating-System","x":-200,"y":150,"highlighted":"Browser"},{"id":"Email","name":"Email","level":1,"cost":5,"parent":"Operating-System","x":0,"y":150,"highlighted":null},{"id":"Social-Media","name":"Social-Media","level":1,"cost":3,"parent":"Operating-System","x":200,"y":150,"highlighted":null},{"id":"Docs","name":"Docs","level":2,"cost":1,"parent":"Browser","x":-320,"y":300,"highlighted":"Docs"},{"id":"Maps","name":"Maps","level":2,"cost":1,"parent":"Browser","x":-240,"y":300,"highlighted":null},{"id":"Search","name":"Search","level":2,"cost":1,"parent":"Browser","x":-160,"y":300,"highlighted":null},{"id":"Chat","name":"Chat","level":2,"cost":1,"parent":"Email","x":-80,"y":300,"highlighted":null},{"id":"Cloud","name":"Cloud","level":2,"cost":1,"parent":"Email","x":0,"y":300,"highlighted":null},{"id":"File","name":"File","level":2,"cost":2,"parent":"Email","x":80,"y":300,"highlighted":null},{"id":"Games","name":"Games","level":2,"cost":4,"parent":"Social-Media","x":160,"y":300,"highlighted":null},{"id":"Photos","name":"Photos","level":2,"cost":1,"parent":"Social-Media","x":240,"y":300,"highlighted":null},{"id":"Videos","name":"Videos","level":2,"cost":1,"parent":"Social-Media","x":320,"y":300,"highlighted":null},{"id":"PowerPoint","name":"PowerPoint","level":3,"cost":5,"parent":"File","x":-200,"y":450,"highlighted":null},{"id":"Excel","name":"Excel","level":3,"cost":4,"parent":"Email","x":0,"y":450,"highlighted":null},{"id":"Word","name":"Word","level":3,"cost":3,"parent":"File","x":200,"y":450,"highlighted":"Word"},{"id":"PowerPoint-Child1","name":"PowerPoint-Child1","level":4,"cost":1,"parent":"PowerPoint","x":-320,"y":600,"highlighted":null},{"id":"PowerPoint-Child2","name":"PowerPoint-Child2","level":4,"cost":1,"parent":"PowerPoint","x":-240,"y":600,"highlighted":null},{"id":"PowerPoint-Child3","name":"PowerPoint-Child3","level":4,"cost":1,"parent":"PowerPoint","x":-160,"y":600,"highlighted":null},{"id":"Excel-Child1","name":"Excel-Child1","level":4,"cost":1,"parent":"Excel","x":-80,"y":600,"highlighted":"Excel-Child1"},{"id":"Excel-Child2","name":"Excel-Child2","level":4,"cost":1,"parent":"Excel","x":0,"y":600,"highlighted":null},{"id":"Excel-Child3","name":"Excel-Child3","level":4,"cost":1,"parent":"Excel","x":80,"y":600,"highlighted":null},{"id":"Word-Child1","name":"Word-Child1","level":4,"cost":1,"parent":"Word","x":160,"y":600,"highlighted":null},{"id":"Word-Child2","name":"Word-Child2","level":4,"cost":1,"parent":"Word","x":240,"y":600,"highlighted":null},{"id":"Word-Child3","name":"Word-Child3","level":4,"cost":1,"parent":"Word","x":320,"y":600,"highlighted":null}],"links":[{"source":"Email","target":"Chat","cost":1,"highlighted":null},{"source":"Email","target":"Cloud","cost":1,"highlighted":null},{"source":"Email","target":"Excel","cost":4,"highlighted":null},{"source":"Email","target":"File","cost":2,"highlighted":null},{"source":"File","target":"Excel","cost":4,"highlighted":null},{"source":"File","target":"PowerPoint","cost":5,"highlighted":null},{"source":"File","target":"Word","cost":3,"highlighted":null},{"source":"Browser","target":"Docs","cost":1,"highlighted":true},{"source":"Browser","target":"Maps","cost":1,"highlighted":null},{"source":"Browser","target":"Search","cost":1,"highlighted":null},{"source":"PowerPoint","target":"PowerPoint-Child1","cost":1,"highlighted":null},{"source":"PowerPoint","target":"PowerPoint-Child2","cost":1,"highlighted":null},{"source":"PowerPoint","target":"PowerPoint-Child3","cost":1,"highlighted":null},{"source":"Operating-System","target":"Browser","cost":2,"highlighted":true},{"source":"Operating-System","target":"Email","cost":5,"highlighted":null},{"source":"Operating-System","target":"Social-Media","cost":3,"highlighted":null},{"source":"Social-Media","target":"Games","cost":4,"highlighted":null},{"source":"Social-Media","target":"Photos","cost":1,"highlighted":null},{"source":"Social-Media","target":"Videos","cost":1,"highlighted":null},{"source":"Excel","target":"Excel-Child1","cost":1,"highlighted":null},{"source":"Excel","target":"Excel-Child2","cost":1,"highlighted":null},{"source":"Excel","target":"Excel-Child3","cost":1,"highlighted":null},{"source":"Word","target":"Word-Child1","cost":1,"highlighted":null},{"source":"Word","target":"Word-Child2","cost":1,"highlighted":null},{"source":"Word","target":"Word-Child3","cost":1,"highlighted":null},{"source":"Word","target":"Excel-Child1","cost":1,"highlighted":true},{"source":"Games","target":"Excel","cost":4,"highlighted":null},{"source":"Games","target":"PowerPoint","cost":5,"highlighted":null},{"source":"Games","target":"Word","cost":3,"highlighted":null},{"source":"Docs","target":"Excel","cost":4,"highlighted":null},{"source":"Docs","target":"PowerPoint","cost":5,"highlighted":null},{"source":"Docs","target":"Word","cost":3,"highlighted":true}]};
+  console.log('DAG data:', data);
+  
+  // Calculate required width based on node positions
+  const nodeExtent = d3.extent(data.nodes, d => d.x);
+  const width = Math.max(800, nodeExtent[1] - nodeExtent[0] + 200); // Add padding
+  const height = window.innerHeight;
+  const nodeRadius = 30;
+  
+  const svg = d3.select('.tree-container')
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .append('g')
+    .attr('transform', `translate(${width/2},60)`);
+
+  // Create links
+  const link = svg.append('g')
+    .selectAll('path')
+    .data(data.links)
+    .join('path')
+    .attr('class', d => d.highlighted ? 'link highlighted' : 'link')
+    .attr('d', d => {
+      const sourceNode = data.nodes.find(n => n.id === d.source);
+      const targetNode = data.nodes.find(n => n.id === d.target);
+      return `M${sourceNode.x},${sourceNode.y}
+              C${sourceNode.x},${(sourceNode.y + targetNode.y) / 2}
+               ${targetNode.x},${(sourceNode.y + targetNode.y) / 2}
+               ${targetNode.x},${targetNode.y}`;
+    });
+
+  // Create nodes
+  const node = svg.append('g')
+    .selectAll('.node')
+    .data(data.nodes)
+    .join('g')
+    .attr('class', d => d.highlighted ? 'node highlighted' : 'node')
+    .attr('transform', d => `translate(${d.x},${d.y})`);
+
+  // Add circles to nodes
+  node.append('circle')
+    .attr('r', nodeRadius);
+
+  // Add labels to nodes
+  node.append('text')
+    .text(d => d.id)
+    .call(wrap, nodeRadius * 1.8);
+
+  // Text wrapping function
+  function wrap(text, width) {
+    text.each(function() {
+      const text = d3.select(this);
+      const words = text.text().split(/\s+/);
+      const lines = [];
+      let line = [];
+      
+      words.forEach(word => {
+        line.push(word);
+        if (line.join(' ').length > width/4) {
+          lines.push(line.join(' '));
+          line = [];
+        }
+      });
+      if (line.length > 0) lines.push(line.join(' '));
+      
+      const lineHeight = 1.1;
+      text.text(null);
+      lines.forEach((l, i) => {
+        text.append('tspan')
+          .text(l)
+          .attr('x', 0)
+          .attr('dy', i === 0 ? -((lines.length-1) * lineHeight)/2 + 'em' : lineHeight + 'em');
+      });
+    });
+  }
+
+  // Add zoom behavior
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 4])
+    .on('zoom', (event) => {
+      svg.attr('transform', event.transform);
+    });
+
+  d3.select('svg').call(zoom);
+  </script></body></html></html>
+```
+
+
+
+```{=html}
+<div style="background-color:grey;height:2px;width:100%;"></div>
+```
+
+
+
+```{=html}
+<div><pre><small><small>source: <a href="https://github.com/adabwana/sp25-cs5200-hw4/blob/master/src/ucs_plus.clj">src/ucs_plus.clj</a></small></small></pre></div>
+```

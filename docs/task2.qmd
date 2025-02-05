@@ -1,0 +1,326 @@
+
+---
+format:
+  html: {toc: true, toc-depth: 3, theme: united, number-sections: false, output-file: task2.html}
+code-block-background: true
+highlight-style: atom-one
+
+---
+<style></style><style>.printedClojure .sourceCode {
+  background-color: transparent;
+  border-style: none;
+}
+</style><style>.clay-limit-image-width .clay-image {max-width: 100%}
+.clay-side-by-side .sourceCode {margin: 0}
+.clay-side-by-side {margin: 1em 0}
+</style>
+<script src="task2_files/md-default0.js" type="text/javascript"></script><script src="task2_files/md-default1.js" type="text/javascript"></script>
+
+::: {.sourceClojure}
+```clojure
+(ns task2
+  (:require
+   [clojure.set :as set]
+   [uniformed.dag :as dag]
+   [uniformed.viz :refer [visualize-tree]]))
+```
+:::
+
+
+
+## Helpers & Data Redux
+**Task 2: Complete implementation of the Uniform-Cost Search (UCS), Depth-First Search (DFS), Depth-Limited Search (DLS) with a limit of 3.** (45 pts.)
+
+Our implementation explores four fundamental **uninformed search algorithms**: _Breadth-First Search_ (BFS), _Uniform-Cost Search_ (UCS), _Depth-First Search_ (DFS), and _Depth-Limited Search_ (DLS). Each algorithm represents a distinct approach to traversing our hierarchical structure, with varying trade-offs between completeness, optimality, and resource utilization.
+
+
+### Mathematical Foundation
+The search algorithms operate on a weighted DAG defined as $G = (V, E, w)$, where:
+
+- $V$ represents the set of vertices in our graph
+- $E$ represents the directed edges between vertices
+- $w: E \rightarrow \mathbb{R}^+$ assigns positive weights to edges
+
+Each algorithm implements a distinct strategy for exploring this structure, maintaining a *frontier* $F$ and *explored set* $E$ during traversal.
+
+
+### Helper Functions
+The foundation of our search implementations relies on efficient data structure transformations. These helper functions convert our graph representation into optimized formats for traversal operations.
+
+The `links->children-map` function transforms our edge list into an adjacency list representation, enabling $O(1)$ access to a node's children. This optimization is important for efficient graph traversal.
+
+
+::: {.sourceClojure}
+```clojure
+(defn links->children-map
+  "Convert links to a map of node -> children for efficient lookup"
+  [dag-data]
+  (->> (:links dag-data)
+       (group-by :source)
+       (map (fn [[k v]] [k (mapv :target v)]))
+       (into {})))
+```
+:::
+
+
+The `nodes->root` function efficiently identifies the root node by computing set differences between all nodes and child nodes. This operation ensures $O(n)$ complexity for root identification.
+
+
+::: {.sourceClojure}
+```clojure
+(defn nodes->root
+  "Find the root node efficiently using pre-computed sets"
+  [dag-data]
+  (let [nodes-set (into #{} (map :id) (:nodes dag-data))
+        child-set (into #{} (map :target) (:links dag-data))]
+    (first (set/difference nodes-set child-set))))
+```
+:::
+
+
+We optimize child node lookup through memoization, preventing redundant computations during search operations. The `get-node-children` function provides cached access to a node's children.
+
+
+::: {.sourceClojure}
+```clojure
+(def get-node-children
+  "Get children of a node from the DAG data structure (memoized)"
+  (memoize
+   (fn [node dag-data]
+     (get (links->children-map dag-data) node []))))
+```
+:::
+
+
+Separate side effects from pure functions
+
+
+::: {.sourceClojure}
+```clojure
+(defn log-path
+  "Log the search path (side effect)"
+  [target path]
+  (if path
+    (println "Search Path:" path)
+    (println "Path not found to target:" target))
+  path)
+```
+:::
+
+
+
+### Data Revision Motivation
+The original graph structure from Task 1 presented a limitation for algorithmic analysis: its uniform path distribution resulted in identical solutions across different search strategies. To enable meaningful comparison of search behaviors, we introduce minor modifications to the graph structure:
+
+1. **Direct Path Addition**: We establish a direct connection from `Email` to `Excel`, creating a shorter but potentially higher-cost path ($w_{Email,Excel} > \sum w_{i,j}$ of alternative routes). This modification specifically challenges UCS's optimality property.
+
+2. **Cross-Connection Implementation**: The addition of an edge from `Word` to `Excel-Child1` creates intersecting paths, forcing search algorithms to handle more complex graph traversal scenarios. This modification particularly affects DFS and DLS behavior when exploring different branches.
+
+These structural modifications ensure that each search algorithm (`BFS`, `UCS`, `DFS`, `DLS`) may now produce distinct paths based on their characteristic behaviors:
+
+- `BFS` will favor shorter paths in terms of edge count
+- `UCS` will optimize for cumulative edge weights
+- `DFS` will commit to deep path exploration
+- `DLS` will restrict exploration depth while maintaining DFS characteristics
+
+
+::: {.sourceClojure}
+```clojure
+(def node-levels
+  {0 #{"Operating-System"}
+   1 #{"Browser" "Email" "Social-Media"}
+   2 #{"Chat" "Cloud" "Docs" "File" "Games" "Maps" "Photos" "Search" "Videos"}
+   3 #{"Excel" "PowerPoint" "Word"}
+   4 #{"Word-Child1" "Word-Child2" "Word-Child3"
+       "Excel-Child1" "Excel-Child2" "Excel-Child3"
+       "PowerPoint-Child1" "PowerPoint-Child2" "PowerPoint-Child3"}})
+```
+:::
+
+
+
+::: {.sourceClojure}
+```clojure
+(def dag-structure
+  {"Operating-System" ["Browser" "Email" "Social-Media"]
+   "Email" ["Chat" "Cloud" "Excel" "File"]  ; Direct path to Excel (shorter but costly)
+   "Browser" ["Docs" "Maps" "Search"]
+   "Social-Media" ["Games" "Photos" "Videos"]
+   "File" ["Excel" "PowerPoint" "Word"]
+   "Docs" ["Excel" "PowerPoint" "Word"]
+   "Games" ["Excel" "PowerPoint" "Word"]
+   "Word" ["Word-Child1" "Word-Child2" "Word-Child3" "Excel-Child1"]  ; Cross-connection
+   "Excel" ["Excel-Child1" "Excel-Child2" "Excel-Child3"]
+   "PowerPoint" ["PowerPoint-Child1" "PowerPoint-Child2" "PowerPoint-Child3"]})
+```
+:::
+
+
+
+::: {.sourceClojure}
+```clojure
+(def tree-config
+  {:root-node "Operating-System"})
+```
+:::
+
+
+
+::: {.sourceClojure}
+```clojure
+(def dag-data
+  (dag/build-dag-data dag-structure node-levels tree-config))
+```
+:::
+
+
+
+::: {.sourceClojure}
+```clojure
+^:kind/hiccup
+(visualize-tree dag-data)
+```
+:::
+
+
+
+```{=html}
+<!DOCTYPE html>
+<html><html><head><meta charset="UTF-8"><script src="https://d3js.org/d3.v7.min.js"></script><style>body { 
+     margin: 0;
+     padding: 0;
+     overflow: auto;
+     background: white;
+   }
+   .tree-container {
+    width: fit-content;
+    min-width: 800px;
+    margin: 0 auto;
+    height: 100%;
+    min-height: 500px;
+    background: white;
+    overflow: auto;
+  }
+  .node circle {
+    fill: #ADD8E6;
+    stroke: #666;
+    stroke-width: 1.5px;
+  }
+  .node.highlighted circle {
+    fill: #FFA500 !important;
+    stroke: #666;
+    stroke-width: 2px;
+  }
+  .node text {
+    font-size: 12px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+  .link {
+    fill: none;
+    stroke: #999;
+    stroke-width: 1.5px;
+  }
+  .link.highlighted {
+    stroke: #FFA500 !important;
+    stroke-width: 2.5px;
+  }
+  </style></head><body><div class="tree-container"></div><script type="text/javascript">
+  const data = {"nodes":[{"id":"Operating-System","name":"Operating-System","level":0,"cost":1,"parent":null,"x":0,"y":0},{"id":"Browser","name":"Browser","level":1,"cost":1,"parent":"Operating-System","x":-200,"y":150},{"id":"Email","name":"Email","level":1,"cost":1,"parent":"Operating-System","x":0,"y":150},{"id":"Social-Media","name":"Social-Media","level":1,"cost":1,"parent":"Operating-System","x":200,"y":150},{"id":"Docs","name":"Docs","level":2,"cost":1,"parent":"Browser","x":-320,"y":300},{"id":"Maps","name":"Maps","level":2,"cost":1,"parent":"Browser","x":-240,"y":300},{"id":"Search","name":"Search","level":2,"cost":1,"parent":"Browser","x":-160,"y":300},{"id":"Chat","name":"Chat","level":2,"cost":1,"parent":"Email","x":-80,"y":300},{"id":"Cloud","name":"Cloud","level":2,"cost":1,"parent":"Email","x":0,"y":300},{"id":"File","name":"File","level":2,"cost":1,"parent":"Email","x":80,"y":300},{"id":"Games","name":"Games","level":2,"cost":1,"parent":"Social-Media","x":160,"y":300},{"id":"Photos","name":"Photos","level":2,"cost":1,"parent":"Social-Media","x":240,"y":300},{"id":"Videos","name":"Videos","level":2,"cost":1,"parent":"Social-Media","x":320,"y":300},{"id":"PowerPoint","name":"PowerPoint","level":3,"cost":1,"parent":"File","x":-200,"y":450},{"id":"Excel","name":"Excel","level":3,"cost":1,"parent":"Email","x":0,"y":450},{"id":"Word","name":"Word","level":3,"cost":1,"parent":"File","x":200,"y":450},{"id":"PowerPoint-Child1","name":"PowerPoint-Child1","level":4,"cost":1,"parent":"PowerPoint","x":-320,"y":600},{"id":"PowerPoint-Child2","name":"PowerPoint-Child2","level":4,"cost":1,"parent":"PowerPoint","x":-240,"y":600},{"id":"PowerPoint-Child3","name":"PowerPoint-Child3","level":4,"cost":1,"parent":"PowerPoint","x":-160,"y":600},{"id":"Excel-Child1","name":"Excel-Child1","level":4,"cost":1,"parent":"Excel","x":-80,"y":600},{"id":"Excel-Child2","name":"Excel-Child2","level":4,"cost":1,"parent":"Excel","x":0,"y":600},{"id":"Excel-Child3","name":"Excel-Child3","level":4,"cost":1,"parent":"Excel","x":80,"y":600},{"id":"Word-Child1","name":"Word-Child1","level":4,"cost":1,"parent":"Word","x":160,"y":600},{"id":"Word-Child2","name":"Word-Child2","level":4,"cost":1,"parent":"Word","x":240,"y":600},{"id":"Word-Child3","name":"Word-Child3","level":4,"cost":1,"parent":"Word","x":320,"y":600}],"links":[{"source":"Email","target":"Chat","cost":1},{"source":"Email","target":"Cloud","cost":1},{"source":"Email","target":"Excel","cost":1},{"source":"Email","target":"File","cost":1},{"source":"File","target":"Excel","cost":1},{"source":"File","target":"PowerPoint","cost":1},{"source":"File","target":"Word","cost":1},{"source":"Browser","target":"Docs","cost":1},{"source":"Browser","target":"Maps","cost":1},{"source":"Browser","target":"Search","cost":1},{"source":"PowerPoint","target":"PowerPoint-Child1","cost":1},{"source":"PowerPoint","target":"PowerPoint-Child2","cost":1},{"source":"PowerPoint","target":"PowerPoint-Child3","cost":1},{"source":"Operating-System","target":"Browser","cost":1},{"source":"Operating-System","target":"Email","cost":1},{"source":"Operating-System","target":"Social-Media","cost":1},{"source":"Social-Media","target":"Games","cost":1},{"source":"Social-Media","target":"Photos","cost":1},{"source":"Social-Media","target":"Videos","cost":1},{"source":"Excel","target":"Excel-Child1","cost":1},{"source":"Excel","target":"Excel-Child2","cost":1},{"source":"Excel","target":"Excel-Child3","cost":1},{"source":"Word","target":"Word-Child1","cost":1},{"source":"Word","target":"Word-Child2","cost":1},{"source":"Word","target":"Word-Child3","cost":1},{"source":"Word","target":"Excel-Child1","cost":1},{"source":"Games","target":"Excel","cost":1},{"source":"Games","target":"PowerPoint","cost":1},{"source":"Games","target":"Word","cost":1},{"source":"Docs","target":"Excel","cost":1},{"source":"Docs","target":"PowerPoint","cost":1},{"source":"Docs","target":"Word","cost":1}]};
+  console.log('DAG data:', data);
+  
+  // Calculate required width based on node positions
+  const nodeExtent = d3.extent(data.nodes, d => d.x);
+  const width = Math.max(800, nodeExtent[1] - nodeExtent[0] + 200); // Add padding
+  const height = window.innerHeight;
+  const nodeRadius = 30;
+  
+  const svg = d3.select('.tree-container')
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .append('g')
+    .attr('transform', `translate(${width/2},60)`);
+
+  // Create links
+  const link = svg.append('g')
+    .selectAll('path')
+    .data(data.links)
+    .join('path')
+    .attr('class', d => d.highlighted ? 'link highlighted' : 'link')
+    .attr('d', d => {
+      const sourceNode = data.nodes.find(n => n.id === d.source);
+      const targetNode = data.nodes.find(n => n.id === d.target);
+      return `M${sourceNode.x},${sourceNode.y}
+              C${sourceNode.x},${(sourceNode.y + targetNode.y) / 2}
+               ${targetNode.x},${(sourceNode.y + targetNode.y) / 2}
+               ${targetNode.x},${targetNode.y}`;
+    });
+
+  // Create nodes
+  const node = svg.append('g')
+    .selectAll('.node')
+    .data(data.nodes)
+    .join('g')
+    .attr('class', d => d.highlighted ? 'node highlighted' : 'node')
+    .attr('transform', d => `translate(${d.x},${d.y})`);
+
+  // Add circles to nodes
+  node.append('circle')
+    .attr('r', nodeRadius);
+
+  // Add labels to nodes
+  node.append('text')
+    .text(d => d.id)
+    .call(wrap, nodeRadius * 1.8);
+
+  // Text wrapping function
+  function wrap(text, width) {
+    text.each(function() {
+      const text = d3.select(this);
+      const words = text.text().split(/\s+/);
+      const lines = [];
+      let line = [];
+      
+      words.forEach(word => {
+        line.push(word);
+        if (line.join(' ').length > width/4) {
+          lines.push(line.join(' '));
+          line = [];
+        }
+      });
+      if (line.length > 0) lines.push(line.join(' '));
+      
+      const lineHeight = 1.1;
+      text.text(null);
+      lines.forEach((l, i) => {
+        text.append('tspan')
+          .text(l)
+          .attr('x', 0)
+          .attr('dy', i === 0 ? -((lines.length-1) * lineHeight)/2 + 'em' : lineHeight + 'em');
+      });
+    });
+  }
+
+  // Add zoom behavior
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 4])
+    .on('zoom', (event) => {
+      svg.attr('transform', event.transform);
+    });
+
+  d3.select('svg').call(zoom);
+  </script></body></html></html>
+```
+
+
+
+```{=html}
+<div style="background-color:grey;height:2px;width:100%;"></div>
+```
+
+
+
+```{=html}
+<div><pre><small><small>source: <a href="https://github.com/adabwana/sp25-cs5200-hw4/blob/master/src/task2.clj">src/task2.clj</a></small></small></pre></div>
+```
