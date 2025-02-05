@@ -1,0 +1,8 @@
+# Yes, but not
+.*
+!.devcontainer/
+!.gitignore
+
+docs/
+prompts/
+*.log

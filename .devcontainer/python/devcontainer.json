@@ -1,0 +1,37 @@
+{
+    "name": "Python Uniformed Search Dev",
+    "dockerComposeFile": [
+        "../../docker-compose.yml",
+        "../docker-compose.dev.yml"
+    ],
+    "service": "python",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-toolsai.jupyter",
+                "ms-python.vscode-pylance",
+                "ms-toolsai.datawrangler"
+            ],
+            "editor.formatOnSave": true,
+            "terminal.integrated.defaultProfile.linux": "bash",
+            "terminal.integrated.profiles.linux": {
+              "bash": {
+                "path": "/bin/bash"
+              }
+            }
+        }
+    },
+    // User configuration
+    "remoteUser": "vscode",
+    "updateRemoteUserUID": true,
+
+    // Container runtime arguments
+    "workspaceFolder": "/workspaces/04-uniformed-search",
+    // "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/04-uniformed-search,type=bind,consistency=cached",
+    
+    // Allow GPU
+    "hostRequirements": {
+        "gpu": "optional"
+    }
+}

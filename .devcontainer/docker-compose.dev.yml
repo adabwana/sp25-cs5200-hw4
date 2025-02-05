@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  python:
+    build:
+      context: ./.devcontainer/python
+      dockerfile: python.Dockerfile
+    container_name: cs4200-python-dev
+    volumes:
+      - .:/workspaces/04-uniformed-search:cached
+    environment:
+      - PYTHONPATH=/workspaces/04-uniformed-search/src/python
+      - JUPYTER_PATH=/workspaces/04-uniformed-search/notebooks
+
+  clojure:
+    build:
+      context: ./.devcontainer/clojure
+      dockerfile: clojure.Dockerfile
+    container_name: cs4200-clojure-dev
+    volumes:
+      - .:/workspaces/04-uniformed-search:cached
+    environment:
+      - CLOJURE_DEPS=/workspaces/04-uniformed-search/deps.edn

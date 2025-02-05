@@ -1,0 +1,44 @@
+{
+    "name": "Clojure Development Environment",
+    "dockerComposeFile": [
+        "../../docker-compose.yml",
+        "../docker-compose.dev.yml"
+    ],
+    "service": "clojure",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "betterthantomorrow.calva",
+                "shaunlebron.vscode-parinfer"
+            ],
+            "settings": {
+                "[clojure]": {
+                    "editor.formatOnType": true,
+                    "editor.formatOnSave": true
+                },
+                "calva.paredit.defaultKeyMap": "original",
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "terminal.integrated.profiles.linux": {
+                    "bash": {
+                        "path": "/bin/bash"
+                    }
+                }
+            }
+        }
+    },
+    "forwardPorts": [],
+
+    // User configuration
+    "remoteUser": "vscode",
+    "updateRemoteUserUID": true,
+
+    // Container runtime arguments
+    "workspaceFolder": "/workspaces/04-uniformed-search",
+    // "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/04-uniformed-search,type=bind,consistency=cached",
+
+    // Allow GPU
+    "hostRequirements": {
+        "gpu": "optional"
+    },
+    "postCreateCommand": "echo 'export DISPLAY=host.docker.internal:0' >> ~/.bashrc && clojure -P"
+}
